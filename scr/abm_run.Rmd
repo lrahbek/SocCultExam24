@@ -1,0 +1,183 @@
+---
+title: "abm_run"
+output: html_document
+date: "2024-07-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Set up 
+```{r}
+pacman::p_load("igraph", "tidyverse", "ggplot2", "truncnorm", "ggpubr")
+source("abm_functions.r")
+```
+
+
+# Create Baseline Dataframe (2017 numbers)
+```{r}
+dist_2017 <- read_csv("level_probs2017.csv", show_col_types = F)
+n <- 400
+dist_2017[1,-1] <- ceiling(dist_2017[1,-1]*(n*dist_2017$total_job[1]))
+dist_2017[2,-1] <- ceiling(dist_2017[2,-1]*(n*dist_2017$total_job[2]))
+dist_2017[3,-1] <- ceiling(dist_2017[3,-1]*(n*dist_2017$total_job[3]))
+
+population <- pivot_longer(dist_2017[1:11], cols = c(colnames(dist_2017[2:11])), 
+             names_to = "identity", 
+             values_to = "n")
+
+population <- uncount(population, n)
+population$ID <- paste0("e", 1:nrow(population))
+population$gender <- str_split_fixed(population$identity, "_",2)[,1]
+population$ethnicity <- str_split_fixed(population$identity, "_",2)[,2]
+population <- population[c(3,1,2,4,5)]
+rm(dist_2017)
+employee_df <- population
+rm(population)
+```
+
+
+
+# Run ABM function
+```{r}
+abm_DEI_function(employee_df = employee_df, 
+                 days_run = 1460, 
+                 IH_i = 0.0001, 
+                 dist_bonus = 0.3)
+```
+
+# Read in data frame with EEO data from Google from 2017-2021
+```{r}
+eeo <- read_csv("eeo.csv", show_col_types = F)
+```
+
+
+# Load in output data from the ABM 
+```{r}
+emp0_0001 <- clean_emp(employee_df)
+emp0_0001$year <- 2017
+emp1_0001_l <- read_csv("out/employee_list_day365_IH1e-04.csv", show_col_types = F)
+emp1_0001 <- clean_emp(emp1_0001_l)
+emp1_0001$year <- 2018
+emp2_0001_l <- read_csv("out/employee_list_day730_IH1e-04.csv", show_col_types = F)
+emp2_0001 <- clean_emp(emp2_0001_l)
+emp2_0001$year <- 2019
+emp3_0001_l <- read_csv("out/employee_list_day1095_IH1e-04.csv", show_col_types = F)
+emp3_0001 <- clean_emp(emp3_0001_l)
+emp3_0001$year <- 2020
+emp4_0001_l <- read_csv("out/employee_list_day1460_IH1e-04.csv", show_col_types = F)
+emp4_0001 <- clean_emp(emp4_0001_l)
+emp4_0001$year <- 2021
+
+emp0001 <- rbind(emp0_0001, emp1_0001, emp2_0001, emp3_0001, emp4_0001)
+emp0001_left <- read.csv("out/output_left_IH1e-04.csv", row.names = 1)
+emp0001_hom <- read.csv("out/output_hom_IH1e-04.csv", row.names = 1)
+
+emp1_0001_c <- as.matrix(read.csv("out/conn_matrix_day365_IH1e-04.csv", row.names = 1))
+emp2_0001_c <- as.matrix(read.csv("out/conn_matrix_day730_IH1e-04.csv", row.names = 1))
+emp3_0001_c <- as.matrix(read.csv("out/conn_matrix_day1095_IH1e-04.csv", row.names = 1))
+emp4_0001_c <- as.matrix(read.csv("out/conn_matrix_day1460_IH1e-04.csv", row.names = 1))
+```
+
+
+
+# Create data frame with both EEO and ABM data 
+```{r}
+data <- merge(eeo[c(1:2,4,7:8)],
+              emp0001[c(1:2,4,6:8,10)], 
+              by.x = c("level", "year", "identity"),  
+              by.y = c("level", "year", "identity"),
+              all = T, 
+              suffixes = c("_val", "_sim"))
+data$perc_sim <- data$perc_sim*100
+data$perc_total_sim <- data$perc_total_sim*100
+data[is.na(data$gender),8] <- "fem"
+data[is.na(data$ethnicity),6:7] <- 0
+data[is.na(data$ethnicity) & data$identity == "fem_nat_am",9] <- "nat_am" 
+data[is.na(data$ethnicity) & data$identity == "fem_white",9] <- "white"
+```
+
+
+```{r}
+ggplot(data)+
+  geom_point(aes(x = year, y = perc_total_val, colour = ethnicity), alpha = 0.5)+
+  geom_line(aes(x = year, y = perc_total_val, colour = ethnicity), alpha = 0.4, linetype = 2)+
+  labs(x = "Year", y = "employees (%)", colour = "Ethnicity")+
+  geom_point(aes(x = year, y = perc_total_sim, colour = ethnicity))+
+  geom_line(aes(x = year, y = perc_total_sim, colour = ethnicity), linewidth = 0.5)+
+  scale_colour_viridis_d(labels=c('Asian', 'Black', "Hispanic & Other", "Native American", "White"))+
+  facet_wrap( vars(gender), nrow = 2, scales = "free_y", 
+              labeller = labeller(gender = c("fem" = "Women", "male" ="Men")))+
+  theme_minimal()+
+  guides(color = guide_legend(override.aes = list(size = 5))) +
+  theme(legend.position = "bottom")
+ggsave("plots/figure3.png", width = 6.9, height = 7 )
+```
+
+
+```{r}
+emp0001_hom %>% 
+  filter(type == "identity") %>% 
+  ggplot()+
+  geom_line(aes(x = day, y=IHi, colour = type_value),  linewidth = 0.5)+
+  labs(x = "Day", y = "IHi", colour = " ")+
+  scale_color_viridis_d(labels = c("Asian woman","Black woman", "Hispanic & Other woman",
+                                   "Native American woman", "White woman", "Asian man", "Black man",
+                                   "Hispanic & Other man", "Native American man", "White man"))+
+  
+  guides(color = guide_legend(override.aes = list(linewidth = 5)))+
+  theme_minimal()+
+  theme(legend.position = "top", 
+        legend.text = element_text(size = 8), 
+        axis.title.x = element_blank(), 
+        axis.text.x = element_blank())
+ggsave("plots/figure4a.png")
+emp0001_hom %>% 
+  filter(type == "identity") %>% 
+  ggplot()+
+  geom_line(aes(x = day, y=n,  colour = type_value), linewidth = 0.5)+
+  labs(x = "Day", y = "Count", colour = " ")+
+  scale_color_viridis_d(labels = c("Asian woman","Black woman", "Hispanic & Other woman",
+                                   "Native American woman", "White woman", "Asian man", "Black man",
+                                   "Hispanic & Other man", "Native American man", "White man"))+
+  
+  guides(color = guide_legend(override.aes = list(linewidth = 5)))+
+  theme_minimal()+
+  theme(legend.position = "top", 
+        legend.text = element_text(size = 8))
+ggsave("plots/figure4b.png")
+```
+
+
+```{r}
+emp0001_left %>% 
+  ggplot()+
+  geom_density(aes(x = day,colour = identity), linewidth = 0.5)+
+  scale_color_viridis_d(labels = c("Asian woman","Black woman", "Hispanic & Other woman",
+                                   "Native American woman", "White woman", "Asian man", "Black man",
+                                   "Hispanic & Other man", "Native American man", "White man"))+
+  #facet_wrap(~level, nrow = 3)+
+  theme_minimal()
+
+```
+
+
+
+
+```{r}
+emp0001_hom %>% 
+  filter(type == "identity") %>% 
+  ggplot()+
+  geom_point(aes(y = n, x = IHi, colour = type_value))
+```
+
+
+
+
+
+
+
+
+
+

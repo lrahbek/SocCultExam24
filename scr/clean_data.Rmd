@@ -1,0 +1,128 @@
+---
+title: "Clean Data"
+output: html_document
+author: "Laura Givskov Rahbek"
+date: "2024-06-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(tidyverse, stringr)
+source("abm_functions.r")
+
+```
+
+# Data Cleaning for Social and Cultural Dynamics Exam Project (2024)
+
+
+## EEO-1 data
+### Template for EEO-1 data frame
+```{r}
+eeo_df <- data.frame(matrix(ncol = 12, nrow = 4))
+colnames(eeo_df) <- c("level", "male_white", "male_black", "male_nat_am", "male_asian", "male_lat_other_more", "fem_white", "fem_black", "fem_nat_am", "fem_asian", "fem_lat_other_more", "total_job")
+
+eeo_df$level <- as.factor(c("Leadership", "Prof_tech", "sales_service_admin","total_group"))
+```
+
+
+### Fill data frames: EEO-1 data (2017-2021)
+```{r}
+#2017
+eeo2017 <- eeo_df
+eeo2017$male_white <- c(5250, 15818, 906, 21974)
+eeo2017$male_black <- c(176, 537, 86, 799)
+eeo2017$male_nat_am <- c(34, 62, 9, 105)
+eeo2017$male_asian <- c(2269, 10937, 202,13408 )
+eeo2017$male_lat_other_more <- c(579, 2049, 215, 2843)
+eeo2017$fem_white <- c(2845, 3810, 1276, 7931)
+eeo2017$fem_black <- c(153, 296, 95 , 544)
+eeo2017$fem_nat_am <- c(17, 31, 17, 65)
+eeo2017$fem_asian <- c(1570, 4511, 341, 6422)
+eeo2017$fem_lat_other_more <- c(388, 785, 282, 1455)
+eeo2017$total_job <- c(13281, 38836, 3429, 55546)
+
+eeo2017_perc <- extract_percentages(eeo2017, 2017)
+
+#2018
+eeo2018 <- eeo_df
+eeo2018$male_white <- c(6223, 17679, 933, 24835)
+eeo2018$male_black <- c(268, 688, 96, 1052)
+eeo2018$male_nat_am <- c(40, 73, 10, 123)
+eeo2018$male_asian <- c(2961, 13799, 207,16667 )
+eeo2018$male_lat_other_more <- c(846, 2663, 246, 3755)
+eeo2018$fem_white <- c(3486, 4774, 1383, 9643)
+eeo2018$fem_black <- c(225, 397, 119 , 741)
+eeo2018$fem_nat_am <- c(23, 37, 16, 76)
+eeo2018$fem_asian <- c(2107, 5791, 380, 8278)
+eeo2018$fem_lat_other_more <- c(602, 1121, 354, 2178)
+eeo2018$total_job <- c(16782, 46722, 3744, 67248)
+
+eeo2018_perc <- extract_percentages(eeo2018, 2018)
+
+#2019
+eeo2019 <- eeo_df
+eeo2019$male_white <- c(6682, 19361, 1274, 27317)
+eeo2019$male_black <- c(359, 906, 124, 1389)
+eeo2019$male_nat_am <- c(45, 81, 15, 141)
+eeo2019$male_asian <- c(3534, 16788, 269,20591 )
+eeo2019$male_lat_other_more <- c(1010, 3298, 312, 4620)
+eeo2019$fem_white <- c(3878, 5412, 1676, 10966)
+eeo2019$fem_black <- c(297, 510, 166 , 973)
+eeo2019$fem_nat_am <- c(26, 40, 24, 90)
+eeo2019$fem_asian <- c(2652, 7265, 489, 10406)
+eeo2019$fem_lat_other_more <- c(764, 1362, 428, 2554)
+eeo2019$total_job <- c(19247, 55023, 4777, 79047)
+
+eeo2019_perc <- extract_percentages(eeo2019, 2019)
+
+#2020
+eeo2020 <- eeo_df
+eeo2020$male_white <- c(7262, 20698, 1509, 29469)
+eeo2020$male_black <- c(450, 1264, 174, 1888)
+eeo2020$male_nat_am <- c(51, 79, 15, 145)
+eeo2020$male_asian <- c(3957, 18806, 307,23070 )
+eeo2020$male_lat_other_more <- c(1176, 3972, 367, 5515)
+eeo2020$fem_white <- c(4128, 6139, 1799, 12066)
+eeo2020$fem_black <- c(342, 751, 195 , 1288)
+eeo2020$fem_nat_am <- c(35, 38, 27, 100)
+eeo2020$fem_asian <- c(2842, 8637, 506, 11985)
+eeo2020$fem_lat_other_more <- c(813, 1659, 461, 2933)
+eeo2020$total_job <- c(21056, 62043, 5360, 88459)
+
+eeo2020_perc <- extract_percentages(eeo2020, 2020)
+
+#2021
+eeo2021 <- eeo_df
+eeo2021$male_white <- c(5525, 23747, 1479, 30751)
+eeo2021$male_black <- c(350, 1962, 180, 2492)
+eeo2021$male_nat_am <- c(39, 101, 8, 148)
+eeo2021$male_asian <- c(2836, 22905, 274,26015 )
+eeo2021$male_lat_other_more <- c(861, 5236, 359, 6456)
+eeo2021$fem_white <- c(2996, 8650, 1907, 13553)
+eeo2021$fem_black <- c(293, 1299, 234 , 1826)
+eeo2021$fem_nat_am <- c(16, 66, 29, 111)
+eeo2021$fem_asian <- c(1652, 11891, 531, 14074)
+eeo2021$fem_lat_other_more <- c(533, 2503, 492, 3528)
+eeo2021$total_job <- c(15101, 78360, 5493, 98954)
+
+eeo2021_perc <- extract_percentages(eeo2021, 2021)
+```
+
+### Combine EEO data frames and save as csv
+```{r}
+eeo_perc <- rbind(eeo2017_perc, eeo2018_perc, eeo2019_perc, eeo2020_perc, eeo2021_perc)
+eeo_perc <- extract_gen_eth(eeo_perc)
+write_csv(eeo_perc, "eeo.csv")
+```
+
+
+### Level Probabilities (2017 baseline)
+```{r}
+level_probs <- eeo2017[-4,]
+for (i in 1:nrow(level_probs[2:11])){
+  level_probs[i,2:11] <- as.numeric(level_probs[i, 2:11]) / level_probs[i,12]
+}
+
+level_probs[12] <- level_probs[12]/sum(level_probs[12]) #add dist of jobs
+write_csv(level_probs, "level_probs2017.csv")
+```
