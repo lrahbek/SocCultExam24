@@ -53,4 +53,5 @@ papers/
 *.pptx
 *.docx
 scr/out/*.csv
+*.pdf
 

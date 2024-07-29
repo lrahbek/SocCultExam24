@@ -129,10 +129,10 @@ emp0001_hom %>%
   guides(color = guide_legend(override.aes = list(linewidth = 5)))+
   theme_minimal()+
   theme(legend.position = "top", 
-        legend.text = element_text(size = 8), 
-        axis.title.x = element_blank(), 
-        axis.text.x = element_blank())
+        legend.text = element_text(size = 8))
+
 ggsave("plots/figure4a.png")
+
 emp0001_hom %>% 
   filter(type == "identity") %>% 
   ggplot()+
